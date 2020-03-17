@@ -7,5 +7,5 @@ Under the `modules/` folder, you'll find all the HDL modules. Their test benches
 **DISCLAIMER**, you will only find functionning modules on here, the ones needing debugging are handled in another private and local repository.  
 
 ## Dependencies
-So far, only one dependency is needed `myhdl 0.11` for python 3. 
+So far, only one dependency is needed `myhdl 0.11` for python 3.  
 Code is tested under the `default` branch of python `3.8.2`.  
