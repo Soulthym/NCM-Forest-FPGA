@@ -4,7 +4,8 @@ An FPGA implementation of the NCM-Forest algorithm, using the myhdl python packa
 ## What's in this repo? 
 Under the `doc/` folder, you'll find documentation for the different modules (TODO).  
 Under the `modules/` folder, you'll find all the HDL modules. Their test benches are in the `if __name__ == "__main__"` blocks.  
-**_/!\\_ DISCLAIMER _/!\\_**, you will only find functionning modules on here, the ones needing debugging are handled in another private and local repository.  
+**_/!\\_ DISCLAIMER _/!\\_**, you will only find functionning modules on here, the ones needing debugging are handled in another private and local repository.
+Tests are performed automatically on modules that need test benches, basic ones are exempt from it (like the `clkdriver.py` and `debugger.py` module).
 
 ## Dependencies
 So far, only one dependency is needed `myhdl 0.11` for python 3.  
