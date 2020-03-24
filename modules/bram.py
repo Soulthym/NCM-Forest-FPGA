@@ -136,8 +136,37 @@ def TestBench(steps, word_size=3, mem_size=2**3):
     return clkDriver, counter, debugger, memController, tests
 
 
+def toHDL(min_val, max_val, mem_size, hdl="VHDL"):
+    assert (hdl in ["VHDL","Verilog"]), f"{hdl=} isn't a valid HDL, should take one of the following values: \"VHDL\" or \"Verilog\""
+    assert (isinstance(max_val, int)), "{max_val=} should be an int"
+    assert (isinstance(min_val, int)), "{min_val=} should be an int"
+    assert (isinstance(mem_size, int)), "{mem_size=} should be an int"
+    assert (min_val <= max_val), f"{min_val=} > {max_val=}, min_val should be < max_val"
+    assert (mem_size > 0), "{mem_size=} should be an int > 0"
+    clk = Signal(bool(0))
+    mem = [Signal(intbv(0, max=max_val, min=min_val))
+               for _ in range(mem_size)]
+    address = Signal(modbv(0, max=mem_size, min=0))
+    data_o = Signal(intbv(int(mem[address].val), max=max_val, min=min_val))
+    data_i = Signal(intbv(int(mem[address].val), max=max_val, min=min_val))
+    write_enable = Signal(bool(0))
+    memController = MemController(clk=clk,
+                              mem=mem,
+                              address=address,
+                              data_o=data_o,
+                              data_i=data_i,
+                              write_enable=write_enable,
+                             )
+    memController.convert(hdl=hdl)
+
+
 if __name__ == '__main__':
     steps=35
     inst=TestBench(steps)
     inst.run_sim(steps)
     print("simulation ran successfully!")
+    toHDL(min_val=-4,
+          max_val=4,
+          mem_size=3,
+          hdl="VHDL"
+         )
