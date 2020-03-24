@@ -5,16 +5,17 @@ from counter import Counter
 from utils import strbv
 
 @block
-def MemController(clk, mem, address, data_o):
+def MemController(clk, mem, address, data_o, data_i, write_enable):
     """
-    MemController(clk, mem, address, data_o):
+    MemController(clk, mem, address, data_o, data_i, write_enable):
         - returns a memory reader
         - arguments:
             clk: the clock driving the reader
                 type:               Signal(bool)
                 kind of argument:   SENSIBILITY
             mem: the memory you want to access using this controller
-                type:               list(intbv) OR list(modbv)
+                type:               list(intbv) OR list(modbv),
+                                    ALL ELEMENTS IN IT MUST BE THE SAME BITSIZE
                 kind of argument:   INPUT
             address: the address in the memory you want to access
                 type:               Signal(intbv) OR Signal(modbv)
@@ -22,22 +23,42 @@ def MemController(clk, mem, address, data_o):
             data_o: the Signal in which to retrieve the memory content
                 type:               Signal(intbv) OR Signal(modbv)
                 kind of argument:   OUTPUT
+                bitsize:            same as every element in mem
+            data_i: the Signal from which to write the memory content
+                type:               Signal(intbv) OR Signal(modbv)
+                kind of argument:   INPUT
+                bitsize:            same as every element in mem
+            write_enable: the Signal telling when to write data to the
+                          specified address in memory.
+                          If writing to the memory, data_o will also
+                          be updated as the previous value of the memory cell,
+                          until the next clock cycle.
+                          Set the bit to 1 OR True if you want to write to the
+                          specified address, otherwise set it to 0 OR False.
+                type:               Signal(bool)
+                kind of argument:   INPUT
     Example:
     mem = [intbv(val, max=10, min=0)
                for val in range(10)]
     address = Signal(modbv(0, max=mem_size, min=0))
     data_o = Signal(intbv(mem[address], min=0, max=10))
-    memReader = MemController(clk=clk,                  #clock signal
+    data_i = Signal(intbv(mem[address], min=0, max=10))
+    write_enable = Signal(bool(False))
+    memController = MemController(clk=clk,                  #clock signal
                               mem=mem,
                               address=address,
                               data_o=data_o,
+                              data_i=data_i,
+                              write_enable=write_enable,
                              )
     """
 
     @always(clk.posedge)
-    def readMem():
+    def readwrite():
+        if write_enable == True:
+            mem[address].next = data_i
         data_o.next = mem[address]
-    return readMem
+    return readwrite
 
 
 @block
@@ -64,15 +85,18 @@ def TestBench(steps, word_size=3, mem_size=2**3):
                       cnt=cnt)
 
     # memory
-    mem = [intbv(val, max=max_val, min=min_val)
-               for val in range(min_val, max_val)]
-    print(mem)
+    mem = [Signal(intbv(0, max=max_val, min=min_val))
+               for _ in range(min_val, max_val)]
     address = Signal(modbv(0, max=mem_size, min=0))
-    data_o = Signal(intbv(mem[address], max=max_val, min=min_val))
-    memReader = MemController(clk=clk,
+    data_o = Signal(intbv(int(mem[address].val), max=max_val, min=min_val))
+    data_i = Signal(intbv(int(mem[address].val), max=max_val, min=min_val))
+    write_enable = Signal(bool(0))
+    memController = MemController(clk=clk,
                               mem=mem,
                               address=address,
                               data_o=data_o,
+                              data_i=data_i,
+                              write_enable=write_enable,
                              )
 
     # debugger
@@ -81,26 +105,39 @@ def TestBench(steps, word_size=3, mem_size=2**3):
                                "clk":lambda c: str(int(c)),
                                "adr":strbv,
                                "d_o":strbv,
+                               "d_i":strbv,
+                               "w_e":lambda c: str(int(c)),
+                               "mem":lambda c: '['+','.join([strbv(cc) for cc in c])+']',
                               },
                         cnt=cnt,
                         clk=clk,
                         adr=address,
                         d_o=data_o,
+                        d_i=data_i,
+                        w_e=write_enable,
+                        mem=mem,
                        )
 
     @instance
     def tests():
         for index, tested_value in enumerate(range(min_val, max_val)):
             address.next = index
+            write_enable.next = True
+            data_i.next = tested_value
             yield delay(2)
-            assert (int(mem[index]) == tested_value), "values do not match"
+            assert (int(data_o) == 0), "data_o and previous mem[address] do not match while setting memory values"
+            assert (int(data_i) == int(mem[address])), "data_i and mem[address] do not match while setting memory values"
+        write_enable.next = False
+        for index, tested_value in enumerate(range(min_val, max_val)):
+            address.next = index
+            yield delay(2)
+            assert (int(data_o) == tested_value), "values do not match"
 
-    return clkDriver, counter, debugger, memReader, tests
+    return clkDriver, counter, debugger, memController, tests
 
 
 if __name__ == '__main__':
-    steps=16
+    steps=35
     inst=TestBench(steps)
     inst.run_sim(steps)
     print("simulation ran successfully!")
-    help(MemController)
