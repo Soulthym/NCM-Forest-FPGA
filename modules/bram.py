@@ -138,6 +138,7 @@ def TestBench(steps, word_size=3, mem_size=2**3):
             data_i.next = tested_value
             yield delay(2)
             assert (int(data_o) == 0), "data_o and previous mem[address] do not match while setting memory values"
+            assert (int(data_i) == int(memController.symdict["mem"][address])), "data_i and mem[address] do not match while setting memory values"
         write_enable.next = False
         for index, tested_value in enumerate(range(min_val, max_val)):
             address.next = index
