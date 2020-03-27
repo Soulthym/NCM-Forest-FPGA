@@ -119,6 +119,7 @@ def TestBench(steps, word_size=3, mem_size=2**3):
                                "d_o":strbv,
                                "d_i":strbv,
                                "w_e":lambda c: str(int(c)),
+                               "mem":lambda m: '['+",".join([strbv(e) for e in m])+']'
                               },
                         cnt=cnt,
                         clk=clk,
@@ -126,6 +127,7 @@ def TestBench(steps, word_size=3, mem_size=2**3):
                         d_o=data_o,
                         d_i=data_i,
                         w_e=write_enable,
+                        mem=memController.symdict["mem"],
                        )
 
     @instance
