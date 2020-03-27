@@ -169,7 +169,7 @@ def toHDL(min_val, max_val, mem_size, hdl="VHDL"):
                                   max_val=max_val,
                                   mem_size=mem_size
                                  )
-    memController.convert(hdl=hdl)
+    memController.convert(hdl=hdl, path='./vhdl-output/')
 
 
 if __name__ == '__main__':
